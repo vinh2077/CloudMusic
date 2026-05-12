@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "description": "Quản lý xe máy toàn diện - bảo dưỡng, luật giao thông, chi phí xăng",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "MotoBike manager by XV",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "MotoBikemanager",
+  "start_url": "./index.html",
+  "theme_color": "#0a0a0f"
+}
