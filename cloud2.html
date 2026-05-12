@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XV Cloud — Music</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --bg2: #0f0f1a;
+    --bg3: #16162a;
+    --surface: #1c1c30;
+    --surface2: #232340;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #7c5cfc;
+    --accent2: #a78bfa;
+    --accent3: #c4b5fd;
+    --neon: #00f5d4;
+    --neon2: #00d4b8;
+    --hot: #ff6b6b;
+    --gold: #ffd700;
+    --text: #f0eeff;
+    --text2: #a09abc;
+    --text3: #6b6585;
+    --sidebar-w: 240px;
+    --player-h: 90px;
+    --radius: 12px;
+    --radius-lg: 20px;
+    --transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: 1fr var(--player-h);
+    grid-template-areas: "sidebar main" "sidebar player";
+    user-select: none;
+  }
+
+  /* ——— SCROLLBAR ——— */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 99px; }
+
+  /* ——— SIDEBAR ——— */
+  .sidebar {
+    grid-area: sidebar;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+    overflow: hidden;
+  }
+  .logo {
+    padding: 0 24px 28px;
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--neon));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-text { background: linear-gradient(to right, var(--accent3), var(--neon)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .nav-section { padding: 0 12px; margin-bottom: 8px; }
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 8px 12px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--ease);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text2);
+    position: relative;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface); color: var(--text); }
+  .nav-item.active { background: var(--surface2); color: var(--text); }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 25%; height: 50%;
+    width: 3px;
+    background: linear-gradient(var(--accent), var(--neon));
+    border-radius: 0 3px 3px 0;
+  }
+  .nav-item .icon { width: 20px; text-align: center; font-size: 17px; flex-shrink: 0; }
+  .badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
+  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 12px 16px; }
+  .sidebar-playlists { flex: 1; overflow-y: auto; padding: 0 12px; }
+  .playlist-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--ease);
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .playlist-item:hover { background: var(--surface); color: var(--text); }
+  .playlist-item.active { color: var(--accent2); }
+  .pl-cover {
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ——— MAIN ——— */
+  .main {
+    grid-area: main;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    padding: 20px 32px 16px;
+    display: flex; align-items: center; gap: 16px;
+    background: linear-gradient(180deg, rgba(8,8,16,0.95) 0%, transparent 100%);
+    position: sticky; top: 0; z-index: 10;
+    flex-shrink: 0;
+  }
+  .topbar-nav { display: flex; gap: 6px; }
+  .topbar-btn {
+    width: 32px; height: 32px;
+    background: var(--surface);
+    border: none;
+    border-radius: 50%;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--ease);
+  }
+  .topbar-btn:hover { background: var(--surface2); color: var(--text); }
+  .search-bar {
+    flex: 1; max-width: 440px;
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .search-icon {
+    position: absolute; left: 14px;
+    color: var(--text3);
+    font-size: 15px;
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    padding: 10px 16px 10px 40px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: var(--ease);
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: var(--accent); background: var(--surface2); box-shadow: 0 0 0 3px rgba(124,92,252,0.15); }
+  .topbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .upload-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 18px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    border: none;
+    border-radius: 99px;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: var(--ease);
+    box-shadow: 0 4px 20px rgba(124,92,252,0.4);
+  }
+  .upload-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(124,92,252,0.5); }
+  .upload-btn:active { transform: translateY(0); }
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--neon), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+
+  .page-content { flex: 1; overflow-y: auto; padding: 0 32px 24px; }
+
+  /* ——— PAGES ——— */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.35s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Hero banner */
+  .hero {
+    background: linear-gradient(135deg, #1a0a3d 0%, #0d1a3d 40%, #0a2530 100%);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+    min-height: 220px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 70% 50%, rgba(124,92,252,0.3) 0%, transparent 60%),
+                radial-gradient(circle at 30% 80%, rgba(0,245,212,0.15) 0%, transparent 50%);
+  }
+  .hero-orb {
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(124,92,252,0.5) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } }
+  .hero-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--neon);
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    position: relative;
+    margin-bottom: 10px;
+    max-width: 500px;
+  }
+  .hero p {
+    font-size: 14px;
+    color: var(--text2);
+    position: relative;
+    max-width: 400px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .hero-cta {
+    display: flex; gap: 12px;
+    position: relative;
+  }
+  .btn-primary {
+    padding: 12px 28px;
+    background: linear-gradient(135deg, var(--neon), var(--neon2));
+    border: none; border-radius: 99px;
+    color: #000;
+    font-size: 14px; font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 20px rgba(0,245,212,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,245,212,0.5); }
+  .btn-ghost {
+    padding: 12px 24px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    color: var(--text);
+    font-size: 14px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: var(--ease);
+    backdrop-filter: blur(10px);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.14); }
+
+  /* Sections */
+  .section { margin-bottom: 32px; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .see-all {
+    font-size: 12px;
+    color: var(--accent2);
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: var(--ease);
+  }
+  .see-all:hover { color: var(--text); }
+
+  /* Card grids */
+  .cards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+  .cards-row-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    cursor: pointer;
+    transition: var(--ease);
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover { background: var(--surface2); border-color: var(--border2); transform: translateY(-3px); }
+  .card-img {
+    width: 100%; aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+  .card-play {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    width: 40px; height: 40px;
+    background: var(--neon);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    color: #000;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: var(--ease);
+    box-shadow: 0 4px 16px rgba(0,245,212,0.5);
+  }
+  .card:hover .card-play { opacity: 1; transform: translateY(0); }
+  .card-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-sub { font-size: 12px; color: var(--text3); }
+
+  /* Track list */
+  .track-list { display: flex; flex-direction: column; gap: 2px; }
+  .track {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--ease);
+  }
+  .track:hover { background: var(--surface); }
+  .track.playing { background: var(--surface); }
+  .track-num {
+    font-size: 13px;
+    color: var(--text3);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    width: 20px;
+  }
+  .track.playing .track-num { display: none; }
+  .track-eq {
+    display: none;
+    width: 20px;
+    height: 20px;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+  }
+  .track.playing .track-eq { display: flex; }
+  .eq-bar {
+    width: 3px;
+    background: var(--neon);
+    border-radius: 2px;
+    animation: eqAnim 0.8s ease-in-out infinite alternate;
+  }
+  .eq-bar:nth-child(1) { animation-delay: 0s; }
+  .eq-bar:nth-child(2) { animation-delay: 0.15s; }
+  .eq-bar:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes eqAnim { from { height: 4px; } to { height: 18px; } }
+  .track-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .track-art {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    background: var(--surface2);
+    overflow: hidden;
+  }
+  .track-art img { width: 100%; height: 100%; object-fit: cover; }
+  .track-text { min-width: 0; }
+  .track-title {
+    font-size: 14px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track.playing .track-title { color: var(--neon); }
+  .track-artist { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-meta { display: flex; align-items: center; gap: 16px; }
+  .track-dur { font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; }
+  .track-like {
+    background: none; border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    transition: var(--ease);
+    border-radius: 4px;
+  }
+  .track-like:hover { color: var(--hot); }
+  .track-like.liked { color: var(--hot); }
+
+  /* Search page */
+  .category-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+  .category-card {
+    border-radius: 14px;
+    padding: 20px 18px 60px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: var(--ease);
+  }
+  .category-card:hover { transform: scale(1.03); }
+  .category-card h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; position: relative; z-index: 1; }
+  .category-emoji {
+    position: absolute;
+    bottom: -10px; right: 10px;
+    font-size: 52px;
+    transform: rotate(20deg);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  }
+
+  /* Download panel */
+  .download-panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  .dl-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .dl-badge {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--hot);
+    background: rgba(255,107,107,0.15);
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,107,107,0.3);
+  }
+  .dl-input-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .dl-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: var(--ease);
+  }
+  .dl-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,252,0.15); }
+  .dl-input::placeholder { color: var(--text3); }
+  .dl-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--hot), #ff8e53);
+    border: none; border-radius: 10px;
+    color: white;
+    font-size: 13px; font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: var(--ease);
+    box-shadow: 0 4px 16px rgba(255,107,107,0.3);
+    white-space: nowrap;
+  }
+  .dl-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,107,107,0.4); }
+  .dl-status {
+    font-size: 13px;
+    color: var(--text2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dl-progress {
+    height: 4px;
+    background: var(--bg);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .dl-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--accent), var(--neon));
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* Equalizer */
+  .eq-panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  .eq-grid {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    justify-content: center;
+    height: 160px;
+    margin: 20px 0 10px;
+  }
+  .eq-band { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .eq-slider {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    -webkit-appearance: slider-vertical;
+    width: 6px;
+    height: 120px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .eq-freq { font-size: 10px; color: var(--text3); font-weight: 600; }
+  .eq-presets { display: flex; gap: 8px; flex-wrap: wrap; }
+  .preset-btn {
+    padding: 6px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    color: var(--text2);
+    font-size: 12px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: var(--ease);
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  .preset-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+  /* Library page */
+  .lib-filters { display: flex; gap: 8px; margin-bottom: 20px; }
+  .filter-chip {
+    padding: 7px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    color: var(--text2);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: var(--ease);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .filter-chip:hover { background: var(--surface2); color: var(--text); }
+  .filter-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--ease);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .drop-zone::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(124,92,252,0.05) 0%, transparent 70%);
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(124,92,252,0.05);
+  }
+  .drop-icon { font-size: 48px; margin-bottom: 12px; }
+  .drop-zone h3 { font-size: 18px; font-weight: 600; margin-bottom: 6px; position: relative; }
+  .drop-zone p { font-size: 13px; color: var(--text3); position: relative; }
+  .drop-browse {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 24px;
+    background: var(--accent);
+    border-radius: 99px;
+    color: white;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: var(--ease);
+    position: relative;
+  }
+  .drop-browse:hover { background: var(--accent2); }
+
+  /* ——— PLAYER ——— */
+  .player {
+    grid-area: player;
+    background: rgba(8,8,16,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    position: relative;
+    z-index: 100;
+  }
+  .now-playing { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .now-art {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .now-art img { width: 100%; height: 100%; object-fit: cover; }
+  .now-art.spinning { animation: spin 4s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .now-info { min-width: 0; }
+  .now-title {
+    font-size: 14px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .now-artist { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .now-like {
+    background: none; border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 6px;
+    transition: var(--ease);
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .now-like:hover { color: var(--hot); }
+  .now-like.liked { color: var(--hot); }
+
+  .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .ctrl-btns { display: flex; align-items: center; gap: 8px; }
+  .ctrl-btn {
+    background: none; border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 8px;
+    border-radius: 8px;
+    transition: var(--ease);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ctrl-btn:hover { color: var(--text); background: var(--surface); }
+  .ctrl-btn.active { color: var(--neon); }
+  .play-btn {
+    width: 44px; height: 44px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    color: #000;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--ease);
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(255,255,255,0.2);
+  }
+  .play-btn:hover { background: var(--neon); transform: scale(1.07); box-shadow: 0 4px 20px rgba(0,245,212,0.4); }
+  .play-btn:active { transform: scale(0.96); }
+  .progress-row {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+  }
+  .progress-time { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; min-width: 32px; }
+  .progress-time.right { text-align: right; }
+  .progress-track {
+    flex: 1; height: 4px;
+    background: var(--surface2);
+    border-radius: 99px;
+    cursor: pointer;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--accent), var(--neon));
+    border-radius: 99px;
+    position: relative;
+    width: 0%;
+    transition: width 0.3s linear;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -6px; top: 50%;
+    transform: translateY(-50%);
+    width: 12px; height: 12px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    transition: var(--ease);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .progress-track:hover .progress-fill::after { opacity: 1; }
+
+  .side-controls { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .vol-slider {
+    width: 80px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .vis-btn {
+    padding: 6px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    color: var(--text2);
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    transition: var(--ease);
+    letter-spacing: 0.04em;
+    font-family: 'DM Sans', sans-serif;
+    text-transform: uppercase;
+  }
+  .vis-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* Visualizer canvas */
+  #vis-canvas {
+    position: fixed;
+    bottom: var(--player-h);
+    left: var(--sidebar-w);
+    right: 0;
+    height: 100px;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  #vis-canvas.visible { opacity: 1; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: calc(var(--player-h) + 20px);
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+    z-index: 1000;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.success .toast-icon { color: var(--neon); }
+  .toast.error .toast-icon { color: var(--hot); }
+  .toast.info .toast-icon { color: var(--accent2); }
+
+  /* Notification dot */
+  .notif-dot {
+    width: 7px; height: 7px;
+    background: var(--hot);
+    border-radius: 50%;
+    position: absolute;
+    top: 8px; right: 14px;
+  }
+
+  /* Source chips */
+  .source-chip {
+    padding: 7px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    color: var(--text2);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: var(--ease);
+    user-select: none;
+  }
+  .source-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .source-chip.active { background: rgba(124,92,252,0.15); border-color: var(--accent); color: var(--accent2); }
+
+  /* Spinner */
+  .dl-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--surface2);
+    border-top-color: var(--neon);
+    border-radius: 50%;
+    animation: spin-anim 0.8s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin-anim { to { transform: rotate(360deg); } }
+
+  /* Source info cards */
+  .source-info-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    transition: var(--ease);
+    cursor: default;
+  }
+  .source-info-card:hover { border-color: var(--border2); background: var(--surface); }
+  .si-icon { font-size: 20px; margin-bottom: 6px; }
+  .si-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .si-desc { font-size: 11px; color: var(--text3); }
+
+
+    text-align: center;
+    padding: 48px 32px;
+    color: var(--text3);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-size: 18px; color: var(--text2); font-weight: 600; margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; line-height: 1.6; }
+
+  /* Vinyl animation on now-art */
+  .vinyl-ring {
+    position: absolute; inset: 8px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .vinyl-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px; height: 8px;
+    background: var(--bg);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* Context menu */
+  .ctx-menu {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 6px;
+    z-index: 9999;
+    min-width: 180px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+    animation: ctxIn 0.15s ease;
+  }
+  @keyframes ctxIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+  .ctx-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text2);
+    transition: var(--ease);
+  }
+  .ctx-item:hover { background: var(--surface); color: var(--text); }
+  .ctx-item.danger:hover { background: rgba(255,107,107,0.1); color: var(--hot); }
+  .ctx-sep { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">☁</div>
+    <span class="logo-text">XV Cloud</span>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Menu</div>
+    <div class="nav-item active" onclick="navigate('home')">
+      <span class="icon">⌂</span> Trang chủ
+    </div>
+    <div class="nav-item" onclick="navigate('search')">
+      <span class="icon">⌕</span> Khám phá
+    </div>
+    <div class="nav-item" onclick="navigate('library')">
+      <span class="icon">◫</span> Thư viện
+      <span class="badge" id="lib-count">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('download')">
+      <span class="icon">↓</span> Tải xuống
+    </div>
+    <div class="nav-item" onclick="navigate('eq')">
+      <span class="icon">⊞</span> Âm thanh
+    </div>
+  </div>
+
+  <hr class="sidebar-divider">
+
+  <div class="nav-section">
+    <div class="nav-label">Danh sách phát</div>
+    <div class="nav-item" onclick="createPlaylist()">
+      <span class="icon" style="color:var(--accent)">+</span>
+      <span>Tạo playlist</span>
+    </div>
+  </div>
+
+  <div class="sidebar-playlists" id="playlists-nav"></div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-nav">
+      <button class="topbar-btn" onclick="history.back()">‹</button>
+      <button class="topbar-btn" onclick="history.forward()">›</button>
+    </div>
+    <div class="search-bar">
+      <span class="search-icon">⌕</span>
+      <input type="text" class="search-input" placeholder="Tìm bài hát, nghệ sĩ, album..." id="search-input" oninput="handleSearch(this.value)">
+    </div>
+    <div class="topbar-right">
+      <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+        ↑ Thêm nhạc
+      </button>
+      <div class="avatar">N</div>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div class="hero">
+        <div class="hero-orb"></div>
+        <div class="hero-tag">✦ XV Cloud — Âm nhạc không giới hạn</div>
+        <h1>Tải nhạc từ<br>mọi nguồn</h1>
+        <p>YouTube, SoundCloud, TikTok, Spotify... Dán link là xong. Lưu trữ và phát nhạc ngay trên trình duyệt.</p>
+        <div class="hero-cta">
+          <button class="btn-primary" onclick="document.getElementById('file-input').click()">▶ Bắt đầu nghe</button>
+          <button class="btn-ghost" onclick="navigate('download')">Tải nhạc mới</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Phát gần đây</span>
+          <span class="see-all" onclick="navigate('library')">Xem tất cả →</span>
+        </div>
+        <div id="recent-tracks" class="track-list">
+          <div class="empty-state">
+            <div class="empty-icon">♪</div>
+            <h3>Chưa có nhạc nào</h3>
+            <p>Tải lên file nhạc hoặc tải từ YouTube để bắt đầu</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Danh sách phát</span>
+          <span class="see-all" onclick="createPlaylist()">+ Tạo mới</span>
+        </div>
+        <div id="playlists-grid" class="cards-row">
+          <div class="empty-state" style="grid-column: 1/-1; padding: 24px">
+            <p style="color: var(--text3)">Chưa có playlist nào — hãy tạo một cái!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH / DISCOVER PAGE -->
+    <div class="page" id="page-search">
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Khám phá theo thể loại</span>
+        </div>
+        <div class="category-grid" id="category-grid"></div>
+      </div>
+      <div class="section" id="search-results-section" style="display:none">
+        <div class="section-header">
+          <span class="section-title">Kết quả tìm kiếm</span>
+        </div>
+        <div id="search-results" class="track-list"></div>
+      </div>
+    </div>
+
+    <!-- LIBRARY PAGE -->
+    <div class="page" id="page-library">
+      <div class="section-header">
+        <span class="section-title">Thư viện nhạc</span>
+        <button class="upload-btn" onclick="document.getElementById('file-input').click()">↑ Thêm nhạc</button>
+      </div>
+      <div class="lib-filters" id="lib-filters">
+        <button class="filter-chip active" onclick="filterLib('all',this)">Tất cả</button>
+        <button class="filter-chip" onclick="filterLib('liked',this)">Yêu thích</button>
+        <button class="filter-chip" onclick="filterLib('mp3',this)">MP3</button>
+        <button class="filter-chip" onclick="filterLib('mp4',this)">MP4 / Video</button>
+      </div>
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon">📁</div>
+        <h3>Kéo & thả file nhạc vào đây</h3>
+        <p>Hỗ trợ MP3, MP4, WAV, OGG, FLAC, AAC và nhiều định dạng khác</p>
+        <span class="drop-browse" onclick="document.getElementById('file-input').click()">Chọn file</span>
+      </div>
+      <div id="library-tracks" class="track-list"></div>
+    </div>
+
+    <!-- DOWNLOAD PAGE -->
+    <div class="page" id="page-download">
+
+      <!-- MAIN DOWNLOADER -->
+      <div class="download-panel" id="dl-main-panel">
+        <div class="dl-header">
+          <h2 style="font-family:'Syne',sans-serif; font-size:22px; font-weight:800; letter-spacing:-0.5px">Tải nhạc từ link</h2>
+          <span class="dl-badge" style="background:rgba(0,245,212,0.12);color:var(--neon);border-color:rgba(0,245,212,0.3)">✦ Cobalt API</span>
+        </div>
+
+        <!-- SOURCE CHIPS -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px">
+          <div class="source-chip active" data-src="youtube">▶ YouTube</div>
+          <div class="source-chip" data-src="soundcloud">☁ SoundCloud</div>
+          <div class="source-chip" data-src="tiktok">♪ TikTok</div>
+          <div class="source-chip" data-src="twitter">✦ Twitter/X</div>
+          <div class="source-chip" data-src="direct">🔗 Direct URL</div>
+        </div>
+
+        <!-- HINT per source -->
+        <div id="dl-hint" style="font-size:12px; color:var(--text3); margin-bottom:14px; padding:10px 14px; background:var(--bg); border-radius:8px; border-left:3px solid var(--accent); line-height:1.6">
+          Dán link YouTube (video hoặc playlist). Ví dụ: <span style="color:var(--accent2)">https://youtube.com/watch?v=...</span>
+        </div>
+
+        <div class="dl-input-row">
+          <input type="text" class="dl-input" id="dl-url" placeholder="Dán link vào đây..." oninput="detectSource(this.value)" onpaste="setTimeout(()=>detectSource(this.value),50)">
+          <button class="dl-btn" id="dl-go-btn" onclick="startDownload()">↓ Tải xuống</button>
+        </div>
+
+        <!-- FORMAT SELECTOR -->
+        <div id="dl-format-row" style="display:flex; gap:10px; margin-bottom:0; align-items:center">
+          <span style="font-size:12px; color:var(--text3)">Định dạng:</span>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="radio" name="dl-fmt" value="audio" checked style="accent-color:var(--accent)"> Chỉ âm thanh (MP3)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="radio" name="dl-fmt" value="video" style="accent-color:var(--accent)"> Video + âm thanh (MP4)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="radio" name="dl-fmt" value="mute" style="accent-color:var(--accent)"> Chỉ video (không âm)
+          </label>
+        </div>
+      </div>
+
+      <!-- RESULT CARD -->
+      <div id="dl-result-card" style="display:none" class="download-panel">
+        <div id="dl-loading" style="text-align:center;padding:24px 0">
+          <div class="dl-spinner"></div>
+          <div style="margin-top:14px; font-size:14px; color:var(--text2)" id="dl-loading-text">Đang xử lý link...</div>
+          <div class="dl-progress" style="display:block; margin-top:16px; max-width:300px; margin-left:auto; margin-right:auto">
+            <div class="dl-progress-bar" id="dl-progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div id="dl-success" style="display:none">
+          <div style="display:flex; gap:16px; align-items:flex-start; margin-bottom:20px">
+            <div id="dl-thumb" style="width:80px;height:80px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;overflow:hidden">
+              <img id="dl-thumb-img" style="width:100%;height:100%;object-fit:cover;display:none">
+              <span id="dl-thumb-icon">🎵</span>
+            </div>
+            <div style="min-width:0">
+              <div style="font-size:16px;font-weight:700;margin-bottom:4px" id="dl-res-title">—</div>
+              <div style="font-size:13px;color:var(--text3);margin-bottom:12px" id="dl-res-meta">—</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <a id="dl-direct-link" href="#" target="_blank" style="text-decoration:none">
+                  <button class="dl-btn" style="padding:10px 20px">↓ Tải về máy</button>
+                </a>
+                <button class="dl-btn" id="dl-add-btn" style="padding:10px 20px; background:linear-gradient(135deg,var(--accent),#a855f7); box-shadow:0 4px 16px rgba(124,92,252,0.4)" onclick="addStreamToLib()">+ Thêm vào XV Cloud</button>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text3);padding-top:12px;border-top:1px solid var(--border)">
+            ℹ Link tải có thể hết hạn sau vài phút. Hãy tải ngay hoặc phát trực tiếp.
+          </div>
+        </div>
+        <div id="dl-error" style="display:none; text-align:center; padding:20px 0">
+          <div style="font-size:36px;margin-bottom:12px">⚠</div>
+          <div style="font-size:15px;font-weight:600;color:var(--hot);margin-bottom:6px" id="dl-err-title">Không thể tải</div>
+          <div style="font-size:13px;color:var(--text3);line-height:1.6" id="dl-err-msg"></div>
+          <button onclick="resetDownloader()" style="margin-top:16px;padding:10px 24px;background:var(--surface2);border:1px solid var(--border2);border-radius:99px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px">↩ Thử lại</button>
+        </div>
+      </div>
+
+      <!-- SUPPORTED SOURCES INFO -->
+      <div class="download-panel">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:16px; font-family:'Syne',sans-serif">Nguồn được hỗ trợ</h3>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px">
+          <div class="source-info-card">
+            <div class="si-icon">▶</div>
+            <div class="si-name">YouTube</div>
+            <div class="si-desc">Video, Shorts, âm thanh</div>
+          </div>
+          <div class="source-info-card">
+            <div class="si-icon">☁</div>
+            <div class="si-name">SoundCloud</div>
+            <div class="si-desc">Track, playlist</div>
+          </div>
+          <div class="source-info-card">
+            <div class="si-icon">♪</div>
+            <div class="si-name">TikTok</div>
+            <div class="si-desc">Video, âm thanh</div>
+          </div>
+          <div class="source-info-card">
+            <div class="si-icon">✦</div>
+            <div class="si-name">Twitter / X</div>
+            <div class="si-desc">Video tweet</div>
+          </div>
+          <div class="source-info-card">
+            <div class="si-icon">◈</div>
+            <div class="si-name">Vimeo</div>
+            <div class="si-desc">Video chất lượng cao</div>
+          </div>
+          <div class="source-info-card">
+            <div class="si-icon">🔗</div>
+            <div class="si-name">Direct MP3/MP4</div>
+            <div class="si-desc">Link trực tiếp tới file</div>
+          </div>
+        </div>
+        <div style="margin-top:16px; font-size:12px; color:var(--text3); line-height:1.7; padding:12px; background:var(--bg); border-radius:8px">
+          ⚡ Sử dụng <strong style="color:var(--accent2)">Cobalt.tools</strong> — dịch vụ tải media mã nguồn mở, miễn phí, không cần đăng nhập. Đôi khi YouTube có thể giới hạn tốc độ; nếu thất bại hãy thử lại sau vài giây.
+        </div>
+      </div>
+    </div>
+
+    <!-- EQUALIZER / SETTINGS PAGE -->
+    <div class="page" id="page-eq">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div>
+          <div class="eq-panel">
+            <div class="section-header">
+              <span class="section-title">Bộ cân bằng âm thanh</span>
+            </div>
+            <div class="eq-presets" id="eq-presets"></div>
+            <div class="eq-grid" id="eq-sliders"></div>
+          </div>
+          <div class="eq-panel">
+            <div class="section-header">
+              <span class="section-title">Âm lượng & Hiệu ứng</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px">
+              <div style="display:flex; align-items:center; gap:12px">
+                <span style="font-size:13px; color:var(--text2); min-width:80px">Bass boost</span>
+                <input type="range" min="0" max="20" value="0" id="bass-boost" style="flex:1; accent-color:var(--neon)" oninput="applyBassBoost(this.value)">
+                <span id="bass-val" style="font-size:12px; color:var(--text3); min-width:30px">0dB</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px">
+                <span style="font-size:13px; color:var(--text2); min-width:80px">Treble</span>
+                <input type="range" min="-12" max="12" value="0" id="treble" style="flex:1; accent-color:var(--accent)" oninput="applyTreble(this.value)">
+                <span id="treble-val" style="font-size:12px; color:var(--text3); min-width:30px">0dB</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px">
+                <span style="font-size:13px; color:var(--text2); min-width:80px">Tốc độ</span>
+                <input type="range" min="0.5" max="2" step="0.05" value="1" id="playback-rate" style="flex:1; accent-color:var(--accent2)" oninput="setPlaybackRate(this.value)">
+                <span id="rate-val" style="font-size:12px; color:var(--text3); min-width:30px">1.0x</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="eq-panel">
+            <div class="section-header">
+              <span class="section-title">Hiển thị trực quan</span>
+            </div>
+            <canvas id="eq-vis" width="400" height="200" style="width:100%; border-radius:10px; background:var(--bg)"></canvas>
+          </div>
+          <div class="eq-panel">
+            <div class="section-header">
+              <span class="section-title">Thông tin thiết bị</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px">
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border)">
+                <span style="color:var(--text2)">Sample Rate</span>
+                <span id="sample-rate" style="color:var(--neon)">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border)">
+                <span style="color:var(--text2)">Channels</span>
+                <span id="audio-channels" style="color:var(--neon)">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:10px 0">
+                <span style="color:var(--text2)">Codec hỗ trợ</span>
+                <span style="color:var(--accent2)">MP3, MP4, WAV, OGG, FLAC, AAC</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- PLAYER BAR -->
+<div class="player">
+  <div class="now-playing">
+    <div class="now-art" id="now-art">
+      <span id="now-art-emoji" style="font-size:26px">♪</span>
+      <div class="vinyl-ring"></div>
+      <div class="vinyl-dot"></div>
+    </div>
+    <div class="now-info">
+      <div class="now-title" id="now-title">NOVA Music</div>
+      <div class="now-artist" id="now-artist">Chọn bài hát để phát</div>
+    </div>
+    <button class="now-like" id="now-like" onclick="toggleLikeCurrentTrack()">♡</button>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl-btns">
+      <button class="ctrl-btn" id="shuffle-btn" title="Xáo trộn" onclick="toggleShuffle()">⇄</button>
+      <button class="ctrl-btn" onclick="playPrev()" title="Bài trước">⏮</button>
+      <button class="play-btn" id="play-btn" onclick="togglePlay()">▶</button>
+      <button class="ctrl-btn" onclick="playNext()" title="Bài tiếp theo">⏭</button>
+      <button class="ctrl-btn" id="repeat-btn" title="Lặp lại" onclick="toggleRepeat()">↺</button>
+    </div>
+    <div class="progress-row">
+      <span class="progress-time" id="time-cur">0:00</span>
+      <div class="progress-track" id="progress-track" onclick="seekTo(event)">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <span class="progress-time right" id="time-dur">0:00</span>
+    </div>
+  </div>
+
+  <div class="side-controls">
+    <button class="ctrl-btn" onclick="toggleVis()" title="Visualizer">〰</button>
+    <button class="ctrl-btn" id="mute-btn" title="Tắt tiếng" onclick="toggleMute()">🔊</button>
+    <input type="range" min="0" max="1" step="0.01" value="1" class="vol-slider" id="volume-slider" oninput="setVolume(this.value)">
+    <button class="vis-btn" onclick="navigate('eq')">EQ</button>
+  </div>
+</div>
+
+<!-- CANVAS VISUALIZER -->
+<canvas id="vis-canvas"></canvas>
+
+<!-- HIDDEN FILE INPUT -->
+<input type="file" id="file-input" accept="audio/*,video/mp4,.flac,.m4a,.ogg" multiple style="display:none" onchange="handleFileUpload(this.files)">
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-msg"></span>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctx-menu" style="display:none"></div>
+
+<script>
+// ============================
+// APP STATE
+// ============================
+let tracks = JSON.parse(localStorage.getItem('nova_tracks') || '[]');
+let playlists = JSON.parse(localStorage.getItem('nova_playlists') || '[]');
+let currentPage = 'home';
+let currentIndex = -1;
+let shuffle = false;
+let repeat = 'none'; // none, one, all
+let isPlaying = false;
+let isMuted = false;
+let isMusicliked = false;
+let libFilter = 'all';
+let searchQuery = '';
+let visActive = false;
+let shuffleOrder = [];
+
+const audio = new Audio();
+let audioCtx, analyser, source, gainNode, bassFilter, trebleFilter;
+
+// ============================
+// AUDIO CONTEXT SETUP
+// ============================
+function initAudioCtx() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  gainNode = audioCtx.createGain();
+  bassFilter = audioCtx.createBiquadFilter();
+  bassFilter.type = 'lowshelf';
+  bassFilter.frequency.value = 200;
+  trebleFilter = audioCtx.createBiquadFilter();
+  trebleFilter.type = 'highshelf';
+  trebleFilter.frequency.value = 4000;
+  if (!source) {
+    source = audioCtx.createMediaElementSource(audio);
+    source.connect(bassFilter);
+    bassFilter.connect(trebleFilter);
+    trebleFilter.connect(gainNode);
+    gainNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  }
+  document.getElementById('sample-rate').textContent = audioCtx.sampleRate + ' Hz';
+  document.getElementById('audio-channels').textContent = '2 (Stereo)';
+}
+
+// ============================
+// NAVIGATION
+// ============================
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const items = document.querySelectorAll('.nav-item');
+  const pages = ['home', 'search', 'library', 'download', 'eq'];
+  const idx = pages.indexOf(page);
+  if (idx >= 0) items[idx].classList.add('active');
+  currentPage = page;
+  if (page === 'home') renderHome();
+  if (page === 'library') renderLibrary();
+  if (page === 'search') renderSearch();
+  if (page === 'eq') renderEQ();
+  if (page === 'download') renderDemoTracks();
+}
+
+// ============================
+// FILE UPLOAD
+// ============================
+function handleFileUpload(files) {
+  let added = 0;
+  Array.from(files).forEach(file => {
+    if (!file.type.match(/audio|video/)) { showToast('⚠', 'Định dạng không hỗ trợ: ' + file.name, 'error'); return; }
+    const url = URL.createObjectURL(file);
+    const track = {
+      id: Date.now() + Math.random(),
+      title: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+      artist: 'Không rõ',
+      album: '',
+      duration: 0,
+      src: url,
+      type: file.type,
+      emoji: getEmoji(file.type),
+      liked: false,
+      addedAt: Date.now(),
+      ext: file.name.split('.').pop().toUpperCase()
+    };
+    // Get duration
+    const tmp = new Audio(url);
+    tmp.onloadedmetadata = () => {
+      track.duration = tmp.duration;
+      saveTracks();
+      renderAll();
+    };
+    tracks.push(track);
+    added++;
+  });
+  if (added > 0) {
+    saveTracks();
+    renderAll();
+    showToast('✓', `Đã thêm ${added} bài hát`, 'success');
+    updateLibCount();
+  }
+}
+
+function getEmoji(type) {
+  if (type.includes('mp4') || type.includes('video')) return '🎬';
+  if (type.includes('ogg')) return '🎸';
+  if (type.includes('flac') || type.includes('wav')) return '🎼';
+  return '🎵';
+}
+
+// Drop zone
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFileUpload(e.dataTransfer.files);
+});
+document.body.addEventListener('dragover', e => e.preventDefault());
+document.body.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.target !== dropZone) handleFileUpload(e.dataTransfer.files);
+});
+
+// ============================
+// PLAYBACK
+// ============================
+function playTrack(index) {
+  if (index < 0 || index >= tracks.length) return;
+  initAudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  currentIndex = index;
+  const track = tracks[index];
+  audio.src = track.src;
+  audio.playbackRate = parseFloat(document.getElementById('playback-rate').value) || 1;
+  audio.play().then(() => {
+    isPlaying = true;
+    updatePlayerUI();
+    renderAll();
+    if (visActive) startVisualizer();
+    // Background mode support via Media Session API
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist,
+        album: track.album || 'NOVA Music'
+      });
+      navigator.mediaSession.setActionHandler('play', () => { audio.play(); isPlaying = true; updatePlayerUI(); });
+      navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); isPlaying = false; updatePlayerUI(); });
+      navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+      navigator.mediaSession.setActionHandler('nexttrack', playNext);
+    }
+  }).catch(err => showToast('⚠', 'Không thể phát: ' + err.message, 'error'));
+}
+
+function togglePlay() {
+  if (currentIndex < 0 && tracks.length > 0) { playTrack(0); return; }
+  if (currentIndex < 0) return;
+  initAudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (isPlaying) { audio.pause(); isPlaying = false; }
+  else { audio.play(); isPlaying = true; if (visActive) startVisualizer(); }
+  updatePlayerUI();
+}
+
+function playNext() {
+  if (!tracks.length) return;
+  if (shuffle && shuffleOrder.length) {
+    const i = shuffleOrder.indexOf(currentIndex);
+    const next = shuffleOrder[(i + 1) % shuffleOrder.length];
+    playTrack(next);
+  } else {
+    playTrack((currentIndex + 1) % tracks.length);
+  }
+}
+function playPrev() {
+  if (!tracks.length) return;
+  if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+  if (shuffle && shuffleOrder.length) {
+    const i = shuffleOrder.indexOf(currentIndex);
+    const prev = shuffleOrder[(i - 1 + shuffleOrder.length) % shuffleOrder.length];
+    playTrack(prev);
+  } else {
+    playTrack((currentIndex - 1 + tracks.length) % tracks.length);
+  }
+}
+
+audio.addEventListener('ended', () => {
+  if (repeat === 'one') { audio.currentTime = 0; audio.play(); }
+  else if (repeat === 'all' || currentIndex < tracks.length - 1) playNext();
+  else { isPlaying = false; updatePlayerUI(); renderAll(); }
+});
+
+audio.addEventListener('timeupdate', () => {
+  const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('time-cur').textContent = fmt(audio.currentTime);
+});
+audio.addEventListener('loadedmetadata', () => {
+  document.getElementById('time-dur').textContent = fmt(audio.duration);
+  if (currentIndex >= 0 && !tracks[currentIndex].duration) {
+    tracks[currentIndex].duration = audio.duration;
+    saveTracks();
+  }
+});
+
+function seekTo(e) {
+  if (!audio.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = pct * audio.duration;
+}
+
+function toggleShuffle() {
+  shuffle = !shuffle;
+  document.getElementById('shuffle-btn').classList.toggle('active', shuffle);
+  if (shuffle) {
+    shuffleOrder = tracks.map((_,i) => i).sort(() => Math.random() - 0.5);
+    showToast('⇄', 'Đã bật xáo trộn', 'info');
+  } else showToast('⇄', 'Đã tắt xáo trộn', 'info');
+}
+
+function toggleRepeat() {
+  const modes = ['none','one','all'];
+  const icons = ['↺','↺¹','↻'];
+  repeat = modes[(modes.indexOf(repeat) + 1) % 3];
+  const btn = document.getElementById('repeat-btn');
+  const idx = modes.indexOf(repeat);
+  btn.classList.toggle('active', repeat !== 'none');
+  btn.textContent = icons[idx];
+  const labels = ['Tắt lặp','Lặp 1 bài','Lặp tất cả'];
+  showToast(icons[idx], labels[idx], 'info');
+}
+
+function setVolume(v) {
+  audio.volume = v;
+  document.getElementById('mute-btn').textContent = v == 0 ? '🔇' : v < 0.4 ? '🔈' : '🔊';
+}
+function toggleMute() {
+  isMuted = !isMuted;
+  audio.muted = isMuted;
+  document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+}
+
+function updatePlayerUI() {
+  const track = currentIndex >= 0 ? tracks[currentIndex] : null;
+  document.getElementById('play-btn').textContent = isPlaying ? '⏸' : '▶';
+  if (track) {
+    document.getElementById('now-title').textContent = track.title;
+    document.getElementById('now-artist').textContent = track.artist;
+    document.getElementById('now-art-emoji').textContent = track.emoji;
+    document.getElementById('now-like').textContent = track.liked ? '♥' : '♡';
+    document.getElementById('now-like').classList.toggle('liked', track.liked);
+    if (isPlaying) document.getElementById('now-art').classList.add('spinning');
+    else document.getElementById('now-art').classList.remove('spinning');
+  }
+}
+
+// ============================
+// LIKE
+// ============================
+function toggleLike(id) {
+  const t = tracks.find(t => t.id == id);
+  if (!t) return;
+  t.liked = !t.liked;
+  saveTracks(); renderAll();
+  showToast(t.liked ? '♥' : '♡', t.liked ? 'Đã thêm vào yêu thích' : 'Đã bỏ yêu thích', t.liked ? 'success' : 'info');
+}
+function toggleLikeCurrentTrack() {
+  if (currentIndex < 0) return;
+  toggleLike(tracks[currentIndex].id);
+  updatePlayerUI();
+}
+
+// ============================
+// RENDERS
+// ============================
+function renderAll() {
+  updatePlayerUI();
+  updateLibCount();
+  if (currentPage === 'home') renderHome();
+  if (currentPage === 'library') renderLibrary();
+  if (currentPage === 'search' && searchQuery) handleSearch(searchQuery);
+  renderPlaylistsNav();
+  renderPlaylistsGrid();
+}
+
+function renderHome() {
+  const recent = [...tracks].sort((a,b) => b.addedAt - a.addedAt).slice(0, 8);
+  const el = document.getElementById('recent-tracks');
+  if (!recent.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">♪</div><h3>Chưa có nhạc nào</h3><p>Tải lên file nhạc hoặc tải từ YouTube để bắt đầu</p></div>`;
+  } else {
+    el.innerHTML = recent.map((t, i) => trackHTML(t, tracks.indexOf(t))).join('');
+  }
+  renderPlaylistsGrid();
+}
+
+function renderLibrary() {
+  let filtered = tracks;
+  if (libFilter === 'liked') filtered = tracks.filter(t => t.liked);
+  else if (libFilter === 'mp3') filtered = tracks.filter(t => t.type && t.type.includes('mpeg') || t.ext === 'MP3');
+  else if (libFilter === 'mp4') filtered = tracks.filter(t => t.type && t.type.includes('video') || t.ext === 'MP4');
+  const el = document.getElementById('library-tracks');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">${libFilter === 'liked' ? '♡' : '🎵'}</div><h3>Không có bài nào</h3><p>${libFilter === 'liked' ? 'Hãy thích một bài hát nào đó' : 'Thêm nhạc bằng cách kéo thả hoặc chọn file'}</p></div>`;
+  } else {
+    el.innerHTML = filtered.map(t => trackHTML(t, tracks.indexOf(t))).join('');
+  }
+}
+
+function renderSearch() {
+  const cats = [
+    { name: 'Pop', emoji: '🎤', color: 'linear-gradient(135deg,#1a1a3e,#2d1b5e)' },
+    { name: 'Hip-Hop', emoji: '🎧', color: 'linear-gradient(135deg,#1e0a0a,#3d1a0a)' },
+    { name: 'Rock', emoji: '🎸', color: 'linear-gradient(135deg,#0a1a0a,#1a3d1a)' },
+    { name: 'Electronic', emoji: '🎹', color: 'linear-gradient(135deg,#0a1a2e,#0a2e3d)' },
+    { name: 'Jazz', emoji: '🎺', color: 'linear-gradient(135deg,#1a1a0a,#3d3d0a)' },
+    { name: 'Classical', emoji: '🎻', color: 'linear-gradient(135deg,#1a0a1a,#2e0a2e)' },
+    { name: 'R&B', emoji: '❤️', color: 'linear-gradient(135deg,#2e0a0a,#1a0a1a)' },
+    { name: 'Indie', emoji: '🌿', color: 'linear-gradient(135deg,#0a1e1a,#0a2e1a)' },
+  ];
+  document.getElementById('category-grid').innerHTML = cats.map(c =>
+    `<div class="category-card" style="background:${c.color}" onclick="showToast('${c.emoji}','Đang tìm kiếm ${c.name}...','info')">
+      <h3>${c.name}</h3>
+      <div class="category-emoji">${c.emoji}</div>
+    </div>`
+  ).join('');
+}
+
+function handleSearch(q) {
+  searchQuery = q;
+  const sec = document.getElementById('search-results-section');
+  const el = document.getElementById('search-results');
+  if (!q.trim()) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const results = tracks.filter(t =>
+    t.title.toLowerCase().includes(q.toLowerCase()) ||
+    t.artist.toLowerCase().includes(q.toLowerCase())
+  );
+  el.innerHTML = results.length
+    ? results.map(t => trackHTML(t, tracks.indexOf(t))).join('')
+    : `<div class="empty-state"><div class="empty-icon">🔍</div><h3>Không tìm thấy</h3><p>Thử từ khóa khác hoặc thêm nhạc mới</p></div>`;
+}
+
+function trackHTML(t, idx) {
+  const isActive = idx === currentIndex;
+  return `<div class="track ${isActive ? 'playing' : ''}" onclick="playTrack(${idx})" oncontextmenu="showCtxMenu(event, ${t.id})">
+    <span class="track-num">${idx + 1}</span>
+    <div class="track-eq">
+      <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+    </div>
+    <div class="track-info">
+      <div class="track-art">${t.emoji}</div>
+      <div class="track-text">
+        <div class="track-title">${t.title}</div>
+        <div class="track-artist">${t.artist} ${t.ext ? `<span style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">${t.ext}</span>` : ''}</div>
+      </div>
+    </div>
+    <div class="track-meta">
+      <span class="track-dur">${t.duration ? fmt(t.duration) : '—'}</span>
+      <button class="track-like ${t.liked ? 'liked' : ''}" onclick="event.stopPropagation();toggleLike(${t.id})">${t.liked ? '♥' : '♡'}</button>
+    </div>
+  </div>`;
+}
+
+function renderPlaylistsNav() {
+  document.getElementById('playlists-nav').innerHTML = playlists.map(pl =>
+    `<div class="playlist-item" onclick="openPlaylist('${pl.id}')">
+      <div class="pl-cover" style="background:${pl.color}">${pl.emoji}</div>
+      <div>
+        <div style="font-size:13px;font-weight:500">${pl.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${pl.tracks.length} bài</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function renderPlaylistsGrid() {
+  const el = document.getElementById('playlists-grid');
+  if (!playlists.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:24px"><p style="color:var(--text3)">Chưa có playlist nào — hãy tạo một cái!</p></div>`;
+    return;
+  }
+  el.innerHTML = playlists.map(pl =>
+    `<div class="card" onclick="openPlaylist('${pl.id}')">
+      <div class="card-img" style="background:${pl.color};font-size:50px">${pl.emoji}
+        <div class="card-play">▶</div>
+      </div>
+      <div class="card-name">${pl.name}</div>
+      <div class="card-sub">${pl.tracks.length} bài hát</div>
+    </div>`
+  ).join('');
+}
+
+function createPlaylist() {
+  const name = prompt('Tên playlist:');
+  if (!name) return;
+  const emojis = ['🎵','🎸','🎹','🎺','🥁','🎻','🎤','💿'];
+  const colors = [
+    'linear-gradient(135deg,#1a0a3d,#2d1b5e)',
+    'linear-gradient(135deg,#0a1a2e,#0a2e3d)',
+    'linear-gradient(135deg,#1a1a0a,#3d3d0a)',
+    'linear-gradient(135deg,#0a1a0a,#1a3d1a)',
+    'linear-gradient(135deg,#2e0a0a,#1a0a1a)',
+  ];
+  const pl = {
+    id: Date.now(),
+    name,
+    emoji: emojis[Math.floor(Math.random() * emojis.length)],
+    color: colors[Math.floor(Math.random() * colors.length)],
+    tracks: [],
+    createdAt: Date.now()
+  };
+  playlists.push(pl);
+  savePlaylists();
+  renderAll();
+  showToast('✓', `Đã tạo playlist "${name}"`, 'success');
+}
+
+function openPlaylist(id) {
+  showToast('📂', 'Mở playlist...', 'info');
+}
+
+// ============================
+// CONTEXT MENU
+// ============================
+function showCtxMenu(e, trackId) {
+  e.preventDefault();
+  const menu = document.getElementById('ctx-menu');
+  menu.style.display = 'block';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  const t = tracks.find(t => t.id == trackId);
+  menu.innerHTML = `
+    <div class="ctx-item" onclick="playTrack(${tracks.indexOf(t)});closeCtx()">▶ Phát ngay</div>
+    <div class="ctx-item" onclick="toggleLike(${trackId});closeCtx()">${t.liked ? '♡ Bỏ yêu thích' : '♥ Thêm yêu thích'}</div>
+    <div class="ctx-item" onclick="addToPlaylistMenu(${trackId});closeCtx()">➕ Thêm vào playlist</div>
+    <hr class="ctx-sep">
+    <div class="ctx-item" onclick="renameTrack(${trackId});closeCtx()">✏ Đổi tên</div>
+    <div class="ctx-item danger" onclick="removeTrack(${trackId});closeCtx()">🗑 Xóa</div>
+  `;
+}
+function closeCtx() { document.getElementById('ctx-menu').style.display = 'none'; }
+document.addEventListener('click', closeCtx);
+
+function renameTrack(id) {
+  const t = tracks.find(t => t.id == id);
+  if (!t) return;
+  const name = prompt('Tên bài hát:', t.title);
+  if (name) { t.title = name; saveTracks(); renderAll(); }
+  const artist = prompt('Tên nghệ sĩ:', t.artist);
+  if (artist) { t.artist = artist; saveTracks(); renderAll(); }
+}
+
+function removeTrack(id) {
+  if (!confirm('Xóa bài hát này?')) return;
+  const idx = tracks.findIndex(t => t.id == id);
+  if (idx < 0) return;
+  if (currentIndex === idx) { audio.pause(); isPlaying = false; currentIndex = -1; updatePlayerUI(); }
+  else if (currentIndex > idx) currentIndex--;
+  tracks.splice(idx, 1);
+  saveTracks(); renderAll();
+  showToast('🗑', 'Đã xóa bài hát', 'info');
+}
+
+function addToPlaylistMenu(trackId) {
+  if (!playlists.length) { showToast('⚠', 'Chưa có playlist nào', 'error'); return; }
+  const names = playlists.map((p, i) => `${i + 1}. ${p.name}`).join('\n');
+  const choice = prompt(`Chọn playlist:\n${names}\n\nNhập số:`);
+  const idx = parseInt(choice) - 1;
+  if (isNaN(idx) || !playlists[idx]) return;
+  if (!playlists[idx].tracks.includes(trackId)) {
+    playlists[idx].tracks.push(trackId);
+    savePlaylists();
+    showToast('✓', `Đã thêm vào "${playlists[idx].name}"`, 'success');
+    renderAll();
+  } else showToast('ℹ', 'Bài hát đã có trong playlist', 'info');
+}
+
+// ============================
+// DOWNLOAD
+// ============================
+async function downloadTrack() {
+  const url = document.getElementById('dl-url').value.trim();
+  if (!url) { showToast('⚠', 'Nhập URL nhạc trước', 'error'); return; }
+  const statusEl = document.getElementById('dl-status');
+  const statusText = document.getElementById('dl-status-text');
+  const progress = document.getElementById('dl-progress');
+  const bar = document.getElementById('dl-progress-bar');
+  statusEl.style.display = 'flex';
+  progress.style.display = 'block';
+  statusText.textContent = '⏳ Đang kết nối...';
+  bar.style.width = '10%';
+
+  // Check if direct audio URL
+  const isDirectAudio = /\.(mp3|ogg|wav|flac|aac|m4a)(\?.*)?$/i.test(url);
+  if (isDirectAudio) {
+    try {
+      statusText.textContent = '📥 Đang tải file âm thanh...';
+      bar.style.width = '40%';
+      const track = {
+        id: Date.now(),
+        title: decodeURIComponent(url.split('/').pop().split('?')[0].replace(/\.[^.]+$/, '')),
+        artist: 'Online',
+        album: '',
+        duration: 0,
+        src: url,
+        type: 'audio/' + url.match(/\.(mp3|ogg|wav|flac|aac|m4a)/i)[1],
+        emoji: '🎵',
+        liked: false,
+        addedAt: Date.now(),
+        ext: url.match(/\.(mp3|ogg|wav|flac|aac|m4a)/i)[1].toUpperCase()
+      };
+      bar.style.width = '80%';
+      const tmp = new Audio(url);
+      tmp.onloadedmetadata = () => { track.duration = tmp.duration; saveTracks(); renderAll(); };
+      tmp.onerror = () => {};
+      tracks.push(track);
+      bar.style.width = '100%';
+      statusText.textContent = '✓ Đã thêm vào thư viện!';
+      saveTracks(); renderAll();
+      showToast('✓', 'Đã thêm "' + track.title + '"', 'success');
+      document.getElementById('dl-url').value = '';
+      setTimeout(() => { statusEl.style.display = 'none'; progress.style.display = 'none'; bar.style.width = '0%'; }, 2000);
+    } catch(err) {
+      statusText.textContent = '✗ Lỗi: ' + err.message;
+      bar.style.width = '0%';
+    }
+  } else if (url.includes('youtube') || url.includes('youtu.be')) {
+    statusText.textContent = '⚠ YouTube cần yt-dlp backend. Thêm trực tiếp để thử...';
+    bar.style.width = '0%';
+    // Try adding as stream anyway
+    setTimeout(() => {
+      showToast('⚠', 'YouTube cần server backend (yt-dlp). Thử direct URL.', 'error');
+      statusEl.style.display = 'none';
+      progress.style.display = 'none';
+    }, 2000);
+  } else {
+    // Try as direct src
+    const track = {
+      id: Date.now(),
+      title: url.split('/').pop().split('?')[0] || 'Online Track',
+      artist: 'Online',
+      album: '',
+      duration: 0,
+      src: url,
+      type: 'audio/mpeg',
+      emoji: '🌐',
+      liked: false,
+      addedAt: Date.now(),
+      ext: 'URL'
+    };
+    tracks.push(track);
+    bar.style.width = '100%';
+    statusText.textContent = '✓ Đã thêm vào thư viện (thử phát)!';
+    saveTracks(); renderAll();
+    showToast('✓', 'Đã thêm từ URL', 'success');
+    document.getElementById('dl-url').value = '';
+    setTimeout(() => { statusEl.style.display = 'none'; progress.style.display = 'none'; bar.style.width = '0%'; }, 2000);
+  }
+}
+
+function renderDemoTracks() {
+  const demos = [
+    { title: 'Sample Jazz - Free Music Archive', artist: 'FMA', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3' },
+    { title: 'Lofi Chill Beat', artist: 'Free Sample', url: '' },
+    { title: 'Ambient Space', artist: 'Sample', url: '' },
+  ];
+  document.getElementById('demo-tracks').innerHTML = demos.map((d, i) =>
+    `<div class="track" onclick="if('${d.url}'){document.getElementById('dl-url').value='${d.url}';showToast('ℹ','URL đã sẵn sàng — nhấn Tải xuống','info')}">
+      <span class="track-num">${i+1}</span>
+      <div class="track-eq" style="display:none"></div>
+      <div class="track-info">
+        <div class="track-art">🎵</div>
+        <div class="track-text">
+          <div class="track-title">${d.title}</div>
+          <div class="track-artist">${d.artist}</div>
+        </div>
+      </div>
+      <div class="track-meta">
+        ${d.url ? `<span style="font-size:11px;color:var(--neon);background:rgba(0,245,212,0.1);padding:3px 10px;border-radius:99px">Direct URL</span>` : `<span style="font-size:11px;color:var(--text3)">Demo</span>`}
+      </div>
+    </div>`
+  ).join('');
+}
+
+// ============================
+// EQUALIZER
+// ============================
+const EQ_BANDS = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
+const eqFilters = [];
+
+function renderEQ() {
+  // Presets
+  const presets = [
+    { name: 'Flat', values: [0,0,0,0,0,0,0,0,0,0] },
+    { name: 'Bass Boost', values: [8,6,4,2,0,0,0,0,0,0] },
+    { name: 'Treble Boost', values: [0,0,0,0,0,2,4,6,6,8] },
+    { name: 'V-Shape', values: [6,4,2,0,-1,-1,2,4,6,6] },
+    { name: 'Vocal', values: [-2,-2,0,2,4,4,2,0,-2,-2] },
+    { name: 'Club', values: [0,0,4,4,2,2,0,0,0,0] },
+    { name: 'Pop', values: [-2,2,4,4,2,0,-2,-2,-2,-2] },
+    { name: 'Rock', values: [4,2,0,-2,-2,0,2,4,4,4] },
+  ];
+  document.getElementById('eq-presets').innerHTML = presets.map((p, i) =>
+    `<button class="preset-btn ${i===0?'active':''}" onclick="applyPreset(${JSON.stringify(p.values)}, this)">${p.name}</button>`
+  ).join('');
+
+  // Sliders
+  document.getElementById('eq-sliders').innerHTML = EQ_BANDS.map((freq, i) =>
+    `<div class="eq-band">
+      <input type="range" class="eq-slider" min="-12" max="12" value="0" id="eq-${i}" oninput="setEQBand(${i}, this.value)">
+      <span class="eq-freq">${freq < 1000 ? freq : (freq/1000)+'k'}</span>
+    </div>`
+  ).join('');
+}
+
+function applyPreset(values, btn) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  values.forEach((v, i) => {
+    const slider = document.getElementById('eq-' + i);
+    if (slider) slider.value = v;
+    setEQBand(i, v);
+  });
+}
+
+function setEQBand(idx, gain) {
+  if (!eqFilters[idx] && audioCtx) {
+    const f = audioCtx.createBiquadFilter();
+    f.type = idx === 0 ? 'lowshelf' : idx === EQ_BANDS.length - 1 ? 'highshelf' : 'peaking';
+    f.frequency.value = EQ_BANDS[idx];
+    f.Q.value = 1;
+    eqFilters[idx] = f;
+  }
+  if (eqFilters[idx]) eqFilters[idx].gain.value = parseFloat(gain);
+}
+
+function applyBassBoost(val) {
+  document.getElementById('bass-val').textContent = val + 'dB';
+  if (bassFilter) bassFilter.gain.value = parseFloat(val);
+}
+function applyTreble(val) {
+  document.getElementById('treble-val').textContent = val + 'dB';
+  if (trebleFilter) trebleFilter.gain.value = parseFloat(val);
+}
+function setPlaybackRate(val) {
+  document.getElementById('rate-val').textContent = parseFloat(val).toFixed(2) + 'x';
+  audio.playbackRate = parseFloat(val);
+}
+
+// EQ canvas viz
+function drawEQVis() {
+  const canvas = document.getElementById('eq-vis');
+  if (!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx2.clearRect(0, 0, w, h);
+  ctx2.strokeStyle = '#7c5cfc';
+  ctx2.lineWidth = 2;
+  ctx2.beginPath();
+  const vals = EQ_BANDS.map((_, i) => {
+    const s = document.getElementById('eq-' + i);
+    return s ? parseFloat(s.value) : 0;
+  });
+  for (let x = 0; x <= w; x++) {
+    const t = x / w;
+    let y = h / 2;
+    vals.forEach((v, i) => {
+      const bx = (i / (EQ_BANDS.length - 1));
+      const dist = Math.abs(t - bx);
+      y -= v * (1 / (1 + dist * 10)) * (h / 30);
+    });
+    if (x === 0) ctx2.moveTo(x, y); else ctx2.lineTo(x, y);
+  }
+  ctx2.stroke();
+  // Grid lines
+  ctx2.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx2.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (i / 4) * h;
+    ctx2.beginPath(); ctx2.moveTo(0, y); ctx2.lineTo(w, y); ctx2.stroke();
+  }
+}
+setInterval(drawEQVis, 500);
+
+// ============================
+// VISUALIZER
+// ============================
+function toggleVis() {
+  visActive = !visActive;
+  const canvas = document.getElementById('vis-canvas');
+  canvas.classList.toggle('visible', visActive);
+  if (visActive && isPlaying) startVisualizer();
+}
+
+function startVisualizer() {
+  if (!analyser) return;
+  const canvas = document.getElementById('vis-canvas');
+  const ctx = canvas.getContext('2d');
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  function draw() {
+    if (!visActive) return;
+    requestAnimationFrame(draw);
+    analyser.getByteFrequencyData(data);
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const barW = canvas.width / data.length * 2;
+    data.forEach((val, i) => {
+      const h = (val / 255) * canvas.height;
+      const hue = (i / data.length) * 280 + 220;
+      ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
+      ctx.fillRect(i * barW * 1.5, canvas.height - h, barW, h);
+    });
+  }
+  draw();
+}
+
+// ============================
+// UTILS
+// ============================
+function fmt(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+function showToast(icon, msg, type = 'success') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = 'toast ' + type;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function updateLibCount() {
+  document.getElementById('lib-count').textContent = tracks.length;
+}
+
+function saveTracks() {
+  const saveable = tracks.map(t => ({ ...t, src: t.src.startsWith('blob:') ? null : t.src }));
+  try { localStorage.setItem('nova_tracks', JSON.stringify(saveable.filter(t => t.src))); } catch(e) {}
+}
+function savePlaylists() {
+  try { localStorage.setItem('nova_playlists', JSON.stringify(playlists)); } catch(e) {}
+}
+
+function filterLib(type, btn) {
+  libFilter = type;
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLibrary();
+}
+
+// ============================
+// INIT
+// ============================
+function init() {
+  navigate('home');
+  renderPlaylistsNav();
+  updateLibCount();
+  renderSearch();
+  renderEQ();
+  // Restore tracks from localStorage (only remote URLs, not blobs)
+  tracks = tracks.filter(t => t.src && !t.src.startsWith('blob:'));
+  renderAll();
+}
+
+init();
+</script>
+</body>
+</html>
